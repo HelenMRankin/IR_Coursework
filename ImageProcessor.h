@@ -1,8 +1,8 @@
 
 #include <stdio.h>
 
-#include <cv.h>
-#include <cvaux.h>
+#include <opencv/cv.h>
+#include <opencv/cvaux.h>
 #include <yarp/os/all.h>
 #include <yarp/sig/all.h>
 #include <yarp/dev/all.h>

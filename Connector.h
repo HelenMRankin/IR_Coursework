@@ -18,7 +18,7 @@ public:
 private: 
 	void initializePorts(char* readPortString, char* iCubInputPortString);
 
-	int initializeRobotHead();
+	bool initializeRobotHead();
 
 	const char* robotHeadPort = "/icubSim/head";
 	BufferedPort < ImageOf<PixelRgb> > readPort;

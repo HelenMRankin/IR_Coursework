@@ -13,15 +13,20 @@ Vector joints;
 	Connector::Connector(char* readPortString, char* iCubInputPortString) {
 		Network yarp; // set up yarp
 		initializePorts(readPortString, iCubInputPortString);
-		if (!initializeRobotHead())
+		if (!initializeRobotHead()) {
+			printf("Failed to initialise Robot Head\n");
 			throw "Failed to initialize iCubHead";
+		}
+			
+
+		printf("Connector initialized");
 	}
 
-	ImageOf<PixelRgb>* getImage() {
+	ImageOf<PixelRgb>* Connector::getImage() {
 		return readPort.read();
 	}
 
-	void lookAt(Vector* target) {
+	void Connector::lookAt(Vector* target) {
 		double x = (*target)[0];
 		double y = (*target)[1];
 		double conf = (*target)[2];
@@ -45,7 +50,7 @@ Vector joints;
 	}
 
 	// TODO
-	void performGesture(enum gesture) {
+	void Connector::performGesture(enum gesture) {
 
 	}
 
@@ -54,7 +59,7 @@ Vector joints;
 		Network::connect(iCubInputPortString, readPortString);
 	}
 
-	int Connector::initializeRobotHead() {
+	bool Connector::initializeRobotHead() {
 		Property options;
 		options.put("device", "remote_controlboard");
 		options.put("local", "/tutorial/motor/client");
@@ -63,7 +68,7 @@ Vector joints;
 		PolyDriver robotHead(options);
 		if (!robotHead.isValid()) {
 			printf("Cannot connect to robot head\n");
-			return 1;
+			return false;
 		}
 
 		robotHead.view(vel);
@@ -71,12 +76,15 @@ Vector joints;
 		if (vel == NULL) {
 			printf("Cannot get interface to robot head\n");
 			robotHead.close();
-			return 1;
+			return false;
 		}
 		
 		vel->getAxes(&numJoints);
+		printf("Reached getAxes\n");
 		joints.resize(numJoints);
+		printf("Reached resize\n");
 		vel->setVelocityMode();
-		return 0;
+		printf("Reached setMode\n");
+		return true;
 	}
 

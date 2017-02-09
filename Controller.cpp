@@ -1,5 +1,14 @@
 #include "Connector.h";
 #include "ImageProcessor.h";
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
+#include <yarp/os/all.h>
+#include <yarp/sig/all.h>
+#include <yarp/dev/all.h>
+using namespace yarp::os;
+using namespace yarp::sig;
+using namespace yarp::dev;
 
 enum State{IDLE, CIRCLE, FACE};
 enum SeeObject{SEE_FACE, SEE_CIRCLE, SEE_NOTHING};
@@ -41,5 +50,17 @@ void stateMachine(SeeObject object) {
 }
 
 	int main(char ** args) {
-		return 1;
+		Connector* connector = new Connector("/test/in","/icubSim/cam/left");
+		ImageProcessor* processor = new ImageProcessor();
+
+		while (1) {
+			printf("Getting image\n");
+			ImageOf<PixelRgb> *source = connector->getImage();
+
+			processor->applyFilters(source);
+		}
+			
+
+			char* tmp;
+			std::cin >> tmp;
 	}

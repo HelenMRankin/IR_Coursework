@@ -6,21 +6,30 @@
 # Replace "yarpy" with whatever your executable should be called.
 
 cmake_minimum_required(VERSION 2.8.9)
-FIND_PACKAGE(OpenCV)
-set(KEYWORD "ICubCoursework")
+
+set(KEYWORD "newISH")
 
 # Start a project.
 project(${KEYWORD})
-
+FIND_PACKAGE( OpenCV REQUIRED )
 # Find YARP.  Point the YARP_DIR environment variable at your build.
 find_package(YARP REQUIRED)
+#list(APPEND CMAKE_MODULE_PATH ${YARP_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${YARP_MODULE_PATH})
+set (OpenCV_DIR "C:\\Program Files (x86)\\robotology\\opencv-2.4.9\\x86\\vc12\\lib")
+set (OpenCV_INCLUDE_DIR "C:\\Program Files (x86)\\robotology\\opencv-2.4.9\\include")
+set (OpenCV_INCLUDE_DIRS "C:\\Program Files (x86)\\robotology\\opencv-2.4.9\\include")
+
+
+
+
 
 # Search for source code.
 file(GLOB folder_source *.cpp *.cc *.c)
 file(GLOB folder_header *.h)
 source_group("Source Files" FILES ${folder_source})
 source_group("Header Files" FILES ${folder_header})
+
 
 # Search for IDL files.
 file(GLOB idl_files *.thrift *.msg *.srv)
@@ -29,6 +38,8 @@ foreach(idl ${idl_files})
   set(folder_source ${folder_source} ${IDL_SRC})
   set(folder_header ${folder_header} ${IDL_HDR})
   include_directories(${IDL_INCLUDE})
+
+
 endforeach()
 
 # Automatically add include directories if needed.
@@ -37,18 +48,16 @@ foreach(header_file ${folder_header})
   include_directories(${p})
 endforeach(header_file ${folder_header})
 
-# Include any directories needed for YARP
+# Inclue any directories needed for YARP
 include_directories(${YARP_INCLUDE_DIRS})
+include_directories("C:\\Program Files (x86)\\robotology\\opencv-2.4.9\\include")
+link_directories("C:\\Program Files (x86)\\robotology\\opencv-2.4.9\\x86\\vc12\\lib")
 
 # Set up our main executable.
 if (folder_source)
   add_executable(${KEYWORD} ${folder_source} ${folder_header})
-  target_link_libraries(${KEYWORD} ${YARP_LIBRARIES} ${OpenCV_LIBS})
+  target_link_libraries(${KEYWORD} ${YARP_LIBRARIES} ${OpenCV_LIBS})	
 else (folder_source)
   message(FATAL_ERROR "No source code files found. Please add something")
 endif (folder_source)
 
-INCLUDE_DIRECTORIES(${OPENCV_INCLUDE_DIR})
-   
-# link opencv libraries 
-TARGET_LINK_LIBRARIES(${KEYWORD} ${OPENCV_LIBRARIES})

@@ -1,13 +1,16 @@
-#include <stdio.h>
-#include <yarp/os/all.h>
-#include <yarp/sig/all.h>
-#include <yarp/dev/all.h>
+#include "Connector.h";
 using namespace yarp::os;
 using namespace yarp::sig;
 using namespace yarp::dev;
-class Connector {
-public:
-	Connector(char* readPortString, char* iCubInputPortString) {
+
+const char* robotHeadPort = "/icubSim/head";
+BufferedPort < ImageOf<PixelRgb> > readPort;
+IVelocityControl *vel;
+int numJoints;
+Vector joints;
+
+
+	Connector::Connector(char* readPortString, char* iCubInputPortString) {
 		Network yarp; // set up yarp
 		initializePorts(readPortString, iCubInputPortString);
 		if (!initializeRobotHead())
@@ -45,13 +48,13 @@ public:
 	void performGesture(enum gesture) {
 
 	}
-private:
-	void initializePorts(char* readPortString, char* iCubInputPortString) {
+
+	void Connector::initializePorts(char* readPortString, char* iCubInputPortString) {
 		readPort.open(readPortString);
 		Network::connect(iCubInputPortString, readPortString);
 	}
 
-	int initializeRobotHead() {
+	int Connector::initializeRobotHead() {
 		Property options;
 		options.put("device", "remote_controlboard");
 		options.put("local", "/tutorial/motor/client");
@@ -77,9 +80,3 @@ private:
 		return 0;
 	}
 
-	const char* robotHeadPort = "/icubSim/head";
-	BufferedPort < ImageOf<PixelRgb> > readPort;
-	IVelocityControl *vel;
-	int numJoints;
-	Vector joints;
-};

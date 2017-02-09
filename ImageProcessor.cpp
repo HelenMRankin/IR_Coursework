@@ -63,13 +63,17 @@ Mat ImageProcessor::applySobelDerivative(Mat sourceImg) {
 	//Convert to grey
 	cvtColor(sourceImg, sourceImg_grey, CV_BGR2GRAY);
 
-	//calc derivatives using sobel func
+	//Sobel: Calculates the first, second, third, or mixed image derivatives using an extended Sobel operator
+	//Parameters: void Sobel(InputArray src, OutputArray dst, int ddepth, int dx, int dy, int ksize=3, double scale=1, double delta=0, int borderType=BORDER_DEFAULT )
+	//calculate derivatives using sobel operator
 	//gradient X
-	//sobel parameters: void Sobel(InputArray src, OutputArray dst, int ddepth, int dx, int dy, int ksize=3, double scale=1, double delta=0, int borderType=BORDER_DEFAULT )
 	Sobel(sourceImg_grey, gradientX, ddepth, 1, 0, 3, scale, delta, cv::BORDER_DEFAULT);
-	convertScaleAbs(gradientX, absGradientX);
 	//gradient Y
 	Sobel(sourceImg_grey, gradientY, ddepth, 0, 1, 3, scale, delta, cv::BORDER_DEFAULT);
+
+	//convertScaleAbs: Scales, computes absolute values and converts the result to 8-bit
+	//Parameters: (Source array, destination array)
+	convertScaleAbs(gradientX, absGradientX);
 	convertScaleAbs(gradientY, absGradientY);
 
 	//calc approx total gradient

@@ -41,7 +41,8 @@ Mat ImageProcessor::applyFilters(ImageOf<PixelRgb> * yarpImage) {
 	yarp::sig::Vector location;
 	
 	Mat saliency= applySobelDerivative(cvImage);
-	detectCircle(cvImage, saliency, &location);
+	//detectCircle(cvImage, saliency, &location);
+	faceDetection(cvImage, saliency);
 	return saliency;
 }
 
@@ -110,7 +111,7 @@ Mat ImageProcessor::applySobelDerivative(Mat sourceImg) {
 	return gradient;
 }
 
-void ImageProcessor::faceDetection(Mat frame)
+void ImageProcessor::faceDetection(Mat source, Mat sobel)
 {
 	
 	vector<Rect> faces;
@@ -131,7 +132,7 @@ void ImageProcessor::faceDetection(Mat frame)
 
 	//detect faces
 	//detectMultiScale parameters: (const Mat& image, vector<Rect>& objects, double scaleFactor=1.1, int minNeighbors=3, int flags=0, Size minSize=Size(), Size maxSize=Size())
-	faceMarker.detectMultiScale(frame, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
+	faceMarker.detectMultiScale(sobel, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
 
 	for (size_t i = 0; i < faces.size(); i++)
 	{
@@ -139,9 +140,9 @@ void ImageProcessor::faceDetection(Mat frame)
 		Point center(faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5);
 		
 		//ellipse paramerters: (Mat& img, Point center, Size axes, double angle, double startAngle, double endAngle, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
-		ellipse(frame, center, Size(faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar(255, 204, 204), 2, 8, 0);
+		ellipse(source, center, Size(faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar(255, 204, 204), 2, 8, 0);
 
-		Mat faceROI = frame(faces[i]);
+		Mat faceROI = sobel(faces[i]);
 		vector<Rect> eyes;
 		//detect eyes in individual face
 		eyesMarker.detectMultiScale(faceROI, eyes, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
@@ -152,9 +153,9 @@ void ImageProcessor::faceDetection(Mat frame)
 			int radius = cvRound(0.25*(eyes[k].width + eyes[k].height));
 
 			// circle parameters: (Mat& img, Point center, int radius, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
-			circle(frame, center, radius, Scalar(234, 205, 255), 2, 8, 0);
+			circle(source, center, radius, Scalar(234, 205, 255), 2, 8, 0);
 		}
 
 	}
-	imshow(detectFace, frame);
+	imshow(detectFace, source);
 }

@@ -1,6 +1,6 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
-
+#include "opencv2/objdetect/objdetect.hpp"
 
 #include "ImageProcessor.h";
 
@@ -12,6 +12,8 @@ using namespace cv;
 char* rawWindow = "raw image";
 char* blurWindow = "blur ";
 char* sobelWindow = "sobel filter";
+char* detectFace = "Haar Cascades Face detection";
+char* detectCircle = "Hough Circle Transform Demo";
 
 ImageProcessor::ImageProcessor() {
 	//test window
@@ -47,7 +49,7 @@ bool ImageProcessor::detectCircle(Mat sourceImage, Mat filteredImage, yarp::sig:
 	vector<Vec3f> circles;
 	cv::HoughCircles(filteredImage, circles, CV_HOUGH_GRADIENT, 2, sourceImage.rows / 8, 100, 50);
 	printf("Detected %i circles\n", circles.size());
-	/// Draw the circles detected
+	// Draw the circles detected
 	
 	for (size_t i = 0; i < circles.size(); i++)
 	{
@@ -59,7 +61,6 @@ bool ImageProcessor::detectCircle(Mat sourceImage, Mat filteredImage, yarp::sig:
 		circle(sourceImage, center, radius, Scalar(0, 0, 255), 6, 8, 0);
 	}
 	/// Show your results
-	namedWindow("Hough Circle Transform Demo", CV_WINDOW_AUTOSIZE);
 	imshow("Hough Circle Transform Demo", sourceImage);
 
 	waitKey(20);
@@ -107,4 +108,53 @@ Mat ImageProcessor::applySobelDerivative(Mat sourceImg) {
 	imshow(sobelWindow, gradient);
 	cv::waitKey(20);
 	return gradient;
+}
+
+void ImageProcessor::faceDetection(Mat frame)
+{
+	
+	vector<Rect> faces;
+	String faceMarker_name = "H:/IR_Coursework/IR_Coursework/haarcascades/haarcascade_frontalface_alt";
+	String eyesMarker_name = "H:/IR_Coursework/IR_Coursework/haarcascades/haarcascade_eye_tree_eyeglasses.xml";
+	CascadeClassifier faceMarker;
+	CascadeClassifier eyesMarker;
+
+	//Load the .xml files
+	if(!faceMarker.load(faceMarker_name))
+	{
+		throw "No source data!\n";
+	}
+	if (!eyesMarker.load(eyesMarker_name))
+	{
+		throw "No source data!\n";
+	}
+
+	//detect faces
+	//detectMultiScale parameters: (const Mat& image, vector<Rect>& objects, double scaleFactor=1.1, int minNeighbors=3, int flags=0, Size minSize=Size(), Size maxSize=Size())
+	faceMarker.detectMultiScale(frame, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
+
+	for (size_t i = 0; i < faces.size(); i++)
+	{
+		//parameters: (x,y) finding half the width of x coordinate, finding half height of y coordinate - find center point
+		Point center(faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5);
+		
+		//ellipse paramerters: (Mat& img, Point center, Size axes, double angle, double startAngle, double endAngle, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
+		ellipse(frame, center, Size(faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar(255, 204, 204), 2, 8, 0);
+
+		Mat faceROI = frame(faces[i]);
+		vector<Rect> eyes;
+		//detect eyes in individual face
+		eyesMarker.detectMultiScale(faceROI, eyes, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
+
+		for (size_t k = 0; k < eyes.size(); k++)
+		{
+			Point center(faces[i].x + eyes[k].x + eyes[k].width*0.5, faces[i].y + eyes[k].x + eyes[k].height*0.5);
+			int radius = cvRound(0.25*(eyes[k].width + eyes[k].height));
+
+			// circle parameters: (Mat& img, Point center, int radius, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
+			circle(frame, center, radius, Scalar(234, 205, 255), 2, 8, 0);
+		}
+
+	}
+	imshow(detectFace, frame);
 }

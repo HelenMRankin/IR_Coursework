@@ -17,6 +17,8 @@ public:
 	Mat applyFilters(ImageOf<PixelRgb> * yarpImage);
 
 	bool detectCircle(Mat sourceImg, Mat filteredImg, yarp::sig::Vector* location);
+
+	void faceDetection(Mat frame);
 private:
 	Mat convertYarpToCvImage(ImageOf<PixelRgb> * yarpImage);
 

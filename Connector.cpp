@@ -8,18 +8,18 @@ BufferedPort < ImageOf<PixelRgb> > readPort;
 IVelocityControl *vel;
 int numJoints;
 Vector joints;
-
+PolyDriver* robotHead;
+Network yarpy;
 
 	Connector::Connector(char* readPortString, char* iCubInputPortString) {
-		Network yarp; // set up yarp
 		initializePorts(readPortString, iCubInputPortString);
-		if (!initializeRobotHead()) {
-			printf("Failed to initialise Robot Head\n");
-			throw "Failed to initialize iCubHead";
-		}
+		//if (!initializeRobotHead()) {
+	//		printf("Failed to initialise Robot Head\n");
+	//		throw "Failed to initialize iCubHead";
+	//	}
 			
 
-		printf("Connector initialized");
+		printf("Connector initialized\n");
 	}
 
 	ImageOf<PixelRgb>* Connector::getImage() {
@@ -65,24 +65,25 @@ Vector joints;
 		options.put("local", "/tutorial/motor/client");
 		options.put("remote", "/icubSim/head");
 
-		PolyDriver robotHead(options);
-		if (!robotHead.isValid()) {
+		PolyDriver* potatoHead = new PolyDriver(options);
+		robotHead = potatoHead;
+
+		if (!robotHead->isValid()) {
 			printf("Cannot connect to robot head\n");
 			return false;
 		}
 
-		robotHead.view(vel);
+		robotHead->view(vel);
 
 		if (vel == NULL) {
 			printf("Cannot get interface to robot head\n");
-			robotHead.close();
+			robotHead->close();
 			return false;
 		}
 		
 		vel->getAxes(&numJoints);
-		printf("Reached getAxes\n");
 		joints.resize(numJoints);
-		printf("Reached resize\n");
+		printf("Got %i joints\n", numJoints);
 		vel->setVelocityMode();
 		printf("Reached setMode\n");
 		return true;

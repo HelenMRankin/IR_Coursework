@@ -19,10 +19,4 @@ private:
 	void initializePorts(char* readPortString, char* iCubInputPortString);
 
 	bool initializeRobotHead();
-
-	const char* robotHeadPort = "/icubSim/head";
-	BufferedPort < ImageOf<PixelRgb> > readPort;
-	IVelocityControl *vel;
-	int numJoints;
-	Vector joints;
 };

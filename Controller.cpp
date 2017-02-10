@@ -52,11 +52,12 @@ void stateMachine(SeeObject object) {
 	int main(char ** args) {
 		Connector* connector = new Connector("/test/in","/icubSim/cam/left");
 		ImageProcessor* processor = new ImageProcessor();
+		printf("Got processor - main\n");
 
 		while (1) {
 			printf("Getting image\n");
 			ImageOf<PixelRgb> *source = connector->getImage();
-
+			printf("Start apply filters");
 			processor->applyFilters(source);
 		}
 			

@@ -14,13 +14,17 @@ class ImageProcessor {
 public:
 	ImageProcessor();
 
-	Mat applyFilters(ImageOf<PixelRgb> * yarpImage);
+	void applyFilters(ImageOf<PixelRgb> * yarpImage);
 
-	bool detectCircle(Mat sourceImg, Mat filteredImg, yarp::sig::Vector* location);
+	bool detectCircle(yarp::sig::Vector* location);
 
-	void faceDetection(Mat source, Mat sobel);
+	bool detectFace(yarp::sig::Vector* location);
 private:
 	Mat convertYarpToCvImage(ImageOf<PixelRgb> * yarpImage);
+
+	Mat applyBlur(Mat sourceImg_grey);
+
+	Mat applyCanny(Mat sourceImg_grey);
 
 	Mat applySobelDerivative(Mat sourceImg);
 };

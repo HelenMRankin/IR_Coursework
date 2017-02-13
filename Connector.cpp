@@ -26,7 +26,7 @@ Network yarpy;
 		return readPort.read();
 	}
 
-	void Connector::lookAt(Vector* target) {
+	void Connector::lookAt(yarp::sig::Vector* target) {
 		double x = (*target)[0];
 		double y = (*target)[1];
 		double conf = (*target)[2];

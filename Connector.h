@@ -11,7 +11,7 @@ public:
 
 	ImageOf<PixelRgb>* getImage();
 
-	void lookAt(Vector* target);
+	void lookAt(yarp::sig::Vector* target);
 
 	// TODO
 	void performGesture(enum gesture);

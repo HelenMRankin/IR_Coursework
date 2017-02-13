@@ -1,25 +1,41 @@
 #include "Connector.h";
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/objdetect/objdetect.hpp"
+
 using namespace yarp::os;
 using namespace yarp::sig;
 using namespace yarp::dev;
+using namespace cv;
 
+char* readPortString;
+char* iCubInputPortString;
 const char* robotHeadPort = "/icubSim/head";
 BufferedPort < ImageOf<PixelRgb> > readPort;
+BufferedPort <ImageOf<PixelRgb>> writePort;
 IVelocityControl *vel;
 int numJoints;
-Vector joints;
+yarp::sig::Vector joints;
 PolyDriver* robotHead;
 Network yarpy;
 
-	Connector::Connector(char* readPortString, char* iCubInputPortString) {
+	Connector::Connector(char* readPortStringIn, char* iCubInputPortStringIn) {
+		readPortString = readPortStringIn;
+
+		iCubInputPortString = iCubInputPortStringIn;
 		initializePorts(readPortString, iCubInputPortString);
-		//if (!initializeRobotHead()) {
-	//		printf("Failed to initialise Robot Head\n");
-	//		throw "Failed to initialize iCubHead";
-	//	}
-			
+		if (!initializeRobotHead()) {
+			printf("Failed to initialise Robot Head\n");
+			throw "Failed to initialize iCubHead";
+		}
+		displayImage("H:\\.windows_settings\\Desktop\\iCub\\IR_Coursework\\face.jpg");
 
 		printf("Connector initialized\n");
+	}
+
+	bool Connector::isConnected() {
+		bool connected = Network::isConnected(iCubInputPortString, readPortString);
+		return connected;
 	}
 
 	ImageOf<PixelRgb>* Connector::getImage() {
@@ -45,6 +61,7 @@ Network yarpy;
 		else {
 			joints[3] = 0;
 			joints[4] = 0;
+			
 		}
 		vel->velocityMove(joints.data());
 	}
@@ -56,7 +73,16 @@ Network yarpy;
 
 	void Connector::initializePorts(char* readPortString, char* iCubInputPortString) {
 		readPort.open(readPortString);
-		Network::connect(iCubInputPortString, readPortString);
+		writePort.open("/test/out");
+		bool didConnect = Network::connect(iCubInputPortString, readPortString);
+		Network::connect("/test/out", "/icubSim/texture/screen");
+
+		if (didConnect) {
+			printf("Connected the ports\n");
+		}
+		else {
+			printf("Didn't connect!\n");
+		}
 	}
 
 	bool Connector::initializeRobotHead() {
@@ -89,3 +115,29 @@ Network yarpy;
 		return true;
 	}
 
+	void Connector::displayImage(char* filePath) {
+		IplImage* imageBGR = cvLoadImage(filePath);
+		if (!imageBGR->imageData) {
+			printf("Could not load image\n");
+		}
+		printf("Loaded image\n");
+		char* input;
+		try {
+			IplImage* image;
+			ImageOf<PixelRgb> output;
+			printf("Converting color\n");
+			cvCvtColor(imageBGR, imageBGR, CV_BGR2RGB);
+			printf("Wrapping image\n");
+			output.wrapIplImage(imageBGR);
+			
+			printf("Preparing image\n");
+			writePort.prepare() = output;
+		}
+		catch (...) {
+			printf("Failed!");
+			std::cin >> input;
+		}
+		std::cin >> input;
+		
+		writePort.write();
+	}

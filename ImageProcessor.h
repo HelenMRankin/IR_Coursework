@@ -22,6 +22,8 @@ public:
 private:
 	Mat convertYarpToCvImage(ImageOf<PixelRgb> * yarpImage);
 
+	Mat applyColourThreshold(Mat sourceImg);
+
 	Mat applyBlur(Mat sourceImg_grey);
 
 	Mat applyCanny(Mat sourceImg_grey);

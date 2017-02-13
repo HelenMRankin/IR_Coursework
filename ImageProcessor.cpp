@@ -28,7 +28,6 @@ ImageProcessor::ImageProcessor() {
 }
 
 Mat ImageProcessor::convertYarpToCvImage(ImageOf<PixelRgb> * yarpImage) {
-	printf("Converting image\n");
 	IplImage* tmp_ipl = (IplImage*)yarpImage->getIplImage();
 
 
@@ -43,14 +42,31 @@ Mat ImageProcessor::convertYarpToCvImage(ImageOf<PixelRgb> * yarpImage) {
 void ImageProcessor::applyFilters(ImageOf<PixelRgb> * yarpImage) {
 	Mat cvImage = ImageProcessor::convertYarpToCvImage(yarpImage);
 	sourceImg = cvImage;
-	blurImg = applyBlur(cvImage);
+	imshow(rawWindow, cvImage);
+
+	Mat thresh2;
+	Mat threshImg = applyColourThreshold(cvImage);
+	sourceImg.copyTo(thresh2, threshImg);
+	blurImg = applyBlur(thresh2);
+
 	Mat blur_grey;
 	cv::cvtColor(blurImg, blur_grey, CV_BGR2GRAY);
 
 	cannyImg = applyCanny(blur_grey);
 	sobelImg = applySobelDerivative(blur_grey);
 
-	printf("Conversion done\n");
+	imshow(sobelWindow, sobelImg);
+	imshow(cannyWindow, cannyImg);
+	cv::waitKey(20);
+}
+
+Mat ImageProcessor::applyColourThreshold(Mat image) {
+	Mat hsv;
+	Mat output;
+	Mat output_BGR;
+	cv::cvtColor(image, hsv, CV_BGR2HSV);
+	cv::inRange(hsv, Scalar(0, 80, 80), Scalar(180, 255, 255), output);
+	return output;
 }
 
 /* Detect a circle, display it on the source image, and get the location of the circle center
@@ -58,8 +74,7 @@ void ImageProcessor::applyFilters(ImageOf<PixelRgb> * yarpImage) {
 */
 bool ImageProcessor::detectCircle(yarp::sig::Vector* location) {
 	vector<Vec3f> circles;
-	cv::HoughCircles(cannyImg, circles, CV_HOUGH_GRADIENT, 2.0 , 32.0, 200, 110, 0);
-	printf("Detected %i circles\n", circles.size());
+	cv::HoughCircles(cannyImg, circles, CV_HOUGH_GRADIENT, 2.0 , 32.0, 200, 100, 0);
 
 	// Just get first circle as POI
 	if (circles.size() > 0) {
@@ -89,14 +104,14 @@ bool ImageProcessor::detectCircle(yarp::sig::Vector* location) {
 
 Mat ImageProcessor::applyBlur(Mat sourceImg) {
 	Mat sourceImg_grey;
-	GaussianBlur(sourceImg, sourceImg_grey, cv::Size(7, 7), 7);
+	GaussianBlur(sourceImg, sourceImg_grey, cv::Size(3, 3), 3);
 	return sourceImg_grey;
 }
 
 Mat ImageProcessor::applyCanny(Mat sourceImg_grey) {
 	Mat gradient;
 
-	Canny(sourceImg_grey, gradient, 100, 200, 3);
+	Canny(sourceImg_grey, gradient, 100, 100, 3);
 	imshow("Canny", gradient);
 
 	return gradient;
@@ -140,18 +155,20 @@ Mat ImageProcessor::applySobelDerivative(Mat sourceImg_grey) {
 bool ImageProcessor::detectFace(yarp::sig::Vector* location)
 {	
 	vector<Rect> faces;
-	String faceMarker_name = "H:/IR_Coursework/IR_Coursework/haarcascades/haarcascade_frontalface_alt";
-	String eyesMarker_name = "H:/IR_Coursework/IR_Coursework/haarcascades/haarcascade_eye_tree_eyeglasses.xml";
+	String faceMarker_name = "H:\\.windows_settings\\Desktop\\iCub\\IR_Coursework\\haarcascades\\haarcascade_frontalface_alt.xml";
+	String eyesMarker_name = "H:\\.windows_settings\\Desktop\\iCub\\IR_Coursework\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml";
 	CascadeClassifier faceMarker;
 	CascadeClassifier eyesMarker;
 
 	//Load the .xml files
 	if(!faceMarker.load(faceMarker_name))
 	{
+		printf("Don't have file!\n");
 		throw "No source data!\n";
 	}
 	if (!eyesMarker.load(eyesMarker_name))
 	{
+		printf("Don't have file!\n");
 		throw "No source data!\n";
 	}
 
@@ -161,6 +178,7 @@ bool ImageProcessor::detectFace(yarp::sig::Vector* location)
 
 	if (faces.size() > 0) {
 
+		return true;
 	}
 	for (size_t i = 0; i < faces.size(); i++)
 	{
@@ -175,20 +193,28 @@ bool ImageProcessor::detectFace(yarp::sig::Vector* location)
 		//detect eyes in individual face
 		eyesMarker.detectMultiScale(faceROI, eyes, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
 
+		int avX, avY = 0;
 		for (size_t k = 0; k < eyes.size(); k++)
 		{
 			Point center(faces[i].x + eyes[k].x + eyes[k].width*0.5, faces[i].y + eyes[k].x + eyes[k].height*0.5);
-			location->resize(3);
-			(*location)[0] = center.x;
-			(*location)[1] = center.y;
-			(*location)[2] = 1;
+			
+			avX += center.x;
+			avY += center.y;
+			
 			int radius = cvRound(0.25*(eyes[k].width + eyes[k].height));
 
 			// circle parameters: (Mat& img, Point center, int radius, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
 			circle(sourceImg, center, radius, Scalar(234, 205, 255), 2, 8, 0);
 		}
 
-	}
+		avX = avX / eyes.size();
+		avY = avY / eyes.size();
+		location->resize(3);
+		(*location)[0] = avX;
+		(*location)[1] = avY;
+		(*location)[2] = 1;
+	 }
 	imshow(faceWindow, sourceImg);
 	return faces.size() > 0 ? true : false;
 }
+

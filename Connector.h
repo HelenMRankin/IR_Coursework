@@ -1,7 +1,11 @@
 #include <stdio.h>
+
+#include <opencv/cv.h>
+#include <opencv/cvaux.h>
 #include <yarp/os/all.h>
 #include <yarp/sig/all.h>
 #include <yarp/dev/all.h>
+
 using namespace yarp::os;
 using namespace yarp::sig;
 using namespace yarp::dev;
@@ -11,6 +15,8 @@ public:
 
 	ImageOf<PixelRgb>* getImage();
 
+	bool isConnected();
+
 	void lookAt(yarp::sig::Vector* target);
 
 	// TODO
@@ -19,4 +25,6 @@ private:
 	void initializePorts(char* readPortString, char* iCubInputPortString);
 
 	bool initializeRobotHead();
+
+	void displayImage(char* filePath);
 };

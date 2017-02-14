@@ -16,9 +16,11 @@ char* faceWindow = "Faces";
 char* circleWindow  = "Circles";
 
 Mat sourceImg;
-Mat blurImg;
 Mat cannyImg;
 Mat sobelImg;
+
+int min_sat = 200;
+int min_val = 30;
 
 ImageProcessor::ImageProcessor() {
 	//test window
@@ -28,14 +30,10 @@ ImageProcessor::ImageProcessor() {
 }
 
 Mat ImageProcessor::convertYarpToCvImage(ImageOf<PixelRgb> * yarpImage) {
-	IplImage* tmp_ipl = (IplImage*)yarpImage->getIplImage();
-
-
 	IplImage *cvImage = cvCreateImage(cvSize(yarpImage->width(),
 		yarpImage->height()),
 		IPL_DEPTH_8U, 3);
 	cvCvtColor((IplImage*)yarpImage->getIplImage(), cvImage, CV_RGB2BGR);
-	
 	return cv::cvarrToMat(cvImage, true);
 }
 
@@ -44,19 +42,21 @@ void ImageProcessor::applyFilters(ImageOf<PixelRgb> * yarpImage) {
 	sourceImg = cvImage;
 	imshow(rawWindow, cvImage);
 
-	Mat thresh2;
-	Mat threshImg = applyColourThreshold(cvImage);
-	sourceImg.copyTo(thresh2, threshImg);
-	blurImg = applyBlur(thresh2);
+	Mat blurImg = applyBlur(sourceImg);
+	Mat blurGrey;
+	cv::cvtColor(blurImg, blurGrey, CV_BGR2GRAY);
 
-	Mat blur_grey;
-	cv::cvtColor(blurImg, blur_grey, CV_BGR2GRAY);
+	// We want a high threshold for circles
+	Mat threshImg;
+	Mat threshMask = applyColourThreshold(blurImg);
+	blurGrey.copyTo(threshImg, threshMask);
 
-	cannyImg = applyCanny(blur_grey);
-	sobelImg = applySobelDerivative(blur_grey);
+	cannyImg = applyCanny(threshImg);
+	sobelImg = blurGrey;
 
 	imshow(sobelWindow, sobelImg);
 	imshow(cannyWindow, cannyImg);
+	printf("Filters done\n");
 	cv::waitKey(20);
 }
 
@@ -65,7 +65,7 @@ Mat ImageProcessor::applyColourThreshold(Mat image) {
 	Mat output;
 	Mat output_BGR;
 	cv::cvtColor(image, hsv, CV_BGR2HSV);
-	cv::inRange(hsv, Scalar(0, 80, 80), Scalar(180, 255, 255), output);
+	cv::inRange(hsv, Scalar(0, 180, 50), Scalar(180, 255, 255), output);
 	return output;
 }
 
@@ -74,15 +74,19 @@ Mat ImageProcessor::applyColourThreshold(Mat image) {
 */
 bool ImageProcessor::detectCircle(yarp::sig::Vector* location) {
 	vector<Vec3f> circles;
-	cv::HoughCircles(cannyImg, circles, CV_HOUGH_GRADIENT, 2.0 , 32.0, 200, 100, 0);
+	cv::HoughCircles(cannyImg, circles, CV_HOUGH_GRADIENT, 2.0 , 32.0, 100, 75, 0);
 
 	// Just get first circle as POI
 	if (circles.size() > 0) {
+		min_val++;
 		Point center(cvRound(circles[0][0]), cvRound(circles[0][1]));
 		location->resize(3);
 		(*location)[0] = center.x;
 		(*location)[1] = center.y;
 		(*location)[2] = 1;
+	}
+	else {
+		printf("VALUE %i TOO HIGH\n", min_val);
 	}
 
 	// Draw circles on source image
@@ -155,8 +159,8 @@ Mat ImageProcessor::applySobelDerivative(Mat sourceImg_grey) {
 bool ImageProcessor::detectFace(yarp::sig::Vector* location)
 {	
 	vector<Rect> faces;
-	String faceMarker_name = "H:\\.windows_settings\\Desktop\\iCub\\IR_Coursework\\haarcascades\\haarcascade_frontalface_alt.xml";
-	String eyesMarker_name = "H:\\.windows_settings\\Desktop\\iCub\\IR_Coursework\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml";
+	String faceMarker_name = "C:\\Users\\Helen\\dev\\yarp_programs\\iCubCoursework\\IR_Coursework\\haarcascades\\haarcascade_frontalface_alt.xml";
+	String eyesMarker_name = "C:\\Users\\Helen\\dev\\yarp_programs\\iCubCoursework\\IR_Coursework\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml";
 	CascadeClassifier faceMarker;
 	CascadeClassifier eyesMarker;
 
@@ -175,45 +179,25 @@ bool ImageProcessor::detectFace(yarp::sig::Vector* location)
 	//detect faces
 	//detectMultiScale parameters: (const Mat& image, vector<Rect>& objects, double scaleFactor=1.1, int minNeighbors=3, int flags=0, Size minSize=Size(), Size maxSize=Size())
 	faceMarker.detectMultiScale(sobelImg, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
-
-	if (faces.size() > 0) {
-
-		return true;
-	}
+	printf("Got %i faces\n", faces.size());
+	location->resize(3);
+	int x;
+	int y;
 	for (size_t i = 0; i < faces.size(); i++)
 	{
 		//parameters: (x,y) finding half the width of x coordinate, finding half height of y coordinate - find center point
 		Point center(faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5);
-		
+		x = center.x;
+		y = center.y;
 		//ellipse paramerters: (Mat& img, Point center, Size axes, double angle, double startAngle, double endAngle, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
 		ellipse(sourceImg, center, Size(faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar(255, 204, 204), 2, 8, 0);
+		printf("Drew an ellipse around face\n");
+	}
 
-		Mat faceROI = sobelImg(faces[i]);
-		vector<Rect> eyes;
-		//detect eyes in individual face
-		eyesMarker.detectMultiScale(faceROI, eyes, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
+	(*location)[0] = x;
+	(*location)[1] = y;
+	(*location)[2] = 1;
 
-		int avX, avY = 0;
-		for (size_t k = 0; k < eyes.size(); k++)
-		{
-			Point center(faces[i].x + eyes[k].x + eyes[k].width*0.5, faces[i].y + eyes[k].x + eyes[k].height*0.5);
-			
-			avX += center.x;
-			avY += center.y;
-			
-			int radius = cvRound(0.25*(eyes[k].width + eyes[k].height));
-
-			// circle parameters: (Mat& img, Point center, int radius, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
-			circle(sourceImg, center, radius, Scalar(234, 205, 255), 2, 8, 0);
-		}
-
-		avX = avX / eyes.size();
-		avY = avY / eyes.size();
-		location->resize(3);
-		(*location)[0] = avX;
-		(*location)[1] = avY;
-		(*location)[2] = 1;
-	 }
 	imshow(faceWindow, sourceImg);
 	return faces.size() > 0 ? true : false;
 }

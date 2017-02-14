@@ -25,6 +25,4 @@ private:
 	void initializePorts(char* readPortString, char* iCubInputPortString);
 
 	bool initializeRobotHead();
-
-	void displayImage(char* filePath);
 };

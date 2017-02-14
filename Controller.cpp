@@ -94,7 +94,7 @@ public:
 				neutral[0] = 0;
 				neutral[1] = 0;
 				neutral[2] = 0;
-				//connector->lookAt(&neutral);
+				connector->lookAt(&neutral);
 			}
 			break;
 		}

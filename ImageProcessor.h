@@ -16,13 +16,20 @@ public:
 
 	void applyFilters(ImageOf<PixelRgb> * yarpImage);
 
-	bool detectCircle(yarp::sig::Vector* location);
+	bool detectAllCircles(yarp::sig::Vector* location);
 
 	bool detectFace(yarp::sig::Vector* location);
+
+	bool detectPurpleCircles(yarp::sig::Vector* location);
+
 private:
 	Mat convertYarpToCvImage(ImageOf<PixelRgb> * yarpImage);
 
+	bool detectCircle(yarp::sig::Vector* location, Mat image);
+	
 	Mat applyColourThreshold(Mat sourceImg);
+
+	Mat applyPurpleFilter(Mat sourceImg);
 
 	Mat applyBlur(Mat sourceImg_grey);
 

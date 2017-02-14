@@ -20,9 +20,11 @@ public:
 	void lookAt(yarp::sig::Vector* target);
 
 	// TODO
-	void performGesture(enum gesture);
+	void performGesture();
 private: 
 	void initializePorts(char* readPortString, char* iCubInputPortString);
 
 	bool initializeRobotHead();
+
+	bool initialiseRightArm();
 };

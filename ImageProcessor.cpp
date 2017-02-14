@@ -17,7 +17,8 @@ char* circleWindow  = "Circles";
 
 Mat sourceImg;
 Mat cannyImg;
-Mat sobelImg;
+Mat blurGrey;
+Mat cannyPurple;
 
 int min_sat = 200;
 int min_val = 30;
@@ -43,7 +44,6 @@ void ImageProcessor::applyFilters(ImageOf<PixelRgb> * yarpImage) {
 	imshow(rawWindow, cvImage);
 
 	Mat blurImg = applyBlur(sourceImg);
-	Mat blurGrey;
 	cv::cvtColor(blurImg, blurGrey, CV_BGR2GRAY);
 
 	// We want a high threshold for circles
@@ -51,10 +51,14 @@ void ImageProcessor::applyFilters(ImageOf<PixelRgb> * yarpImage) {
 	Mat threshMask = applyColourThreshold(blurImg);
 	blurGrey.copyTo(threshImg, threshMask);
 
-	cannyImg = applyCanny(threshImg);
-	sobelImg = blurGrey;
+	Mat purpleImg;
+	Mat purpleMask = applyPurpleFilter(blurImg);
+	blurGrey.copyTo(purpleImg, purpleMask);
 
-	imshow(sobelWindow, sobelImg);
+	cannyImg = applyCanny(threshImg);
+	cannyPurple = applyCanny(purpleImg);
+
+	imshow(sobelWindow, blurGrey);
 	imshow(cannyWindow, cannyImg);
 	printf("Filters done\n");
 	cv::waitKey(20);
@@ -69,12 +73,31 @@ Mat ImageProcessor::applyColourThreshold(Mat image) {
 	return output;
 }
 
+Mat ImageProcessor::applyPurpleFilter(Mat image)
+{
+	Mat hsv;
+	Mat purpleImg;
+	cv::cvtColor(image, hsv, CV_BGR2HSV);
+	cv::inRange(hsv, Scalar(134,142,122), Scalar(140,255,190), purpleImg);
+	return purpleImg;
+}
+
+bool ImageProcessor::detectPurpleCircles(yarp::sig::Vector* location)
+{
+	detectCircle(location, cannyPurple);
+}
+
+bool ImageProcessor::detectAllCircles(yarp::sig::Vector* location)
+{
+	detectCircle(location, cannyImg);
+}
+
 /* Detect a circle, display it on the source image, and get the location of the circle center
  * By Helen Rankin
 */
-bool ImageProcessor::detectCircle(yarp::sig::Vector* location) {
+bool ImageProcessor::detectCircle(yarp::sig::Vector* location, Mat image) {
 	vector<Vec3f> circles;
-	cv::HoughCircles(cannyImg, circles, CV_HOUGH_GRADIENT, 2.0 , 32.0, 100, 75, 0);
+	cv::HoughCircles(image, circles, CV_HOUGH_GRADIENT, 2.0 , 32.0, 100, 75, 0);
 
 	// Just get first circle as POI
 	if (circles.size() > 0) {
@@ -178,7 +201,7 @@ bool ImageProcessor::detectFace(yarp::sig::Vector* location)
 
 	//detect faces
 	//detectMultiScale parameters: (const Mat& image, vector<Rect>& objects, double scaleFactor=1.1, int minNeighbors=3, int flags=0, Size minSize=Size(), Size maxSize=Size())
-	faceMarker.detectMultiScale(sobelImg, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
+	faceMarker.detectMultiScale(blurGrey, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
 	printf("Got %i faces\n", faces.size());
 	location->resize(3);
 	int x;

@@ -71,7 +71,33 @@ Network yarpy;
 	// TODO
 	void Connector::performGesture() 
 	{
-				
+		for (int i = 0; i<numRightArmJoints; i++) 
+		{
+			joints[i] = 0;
+		}
+
+		cv::waitKey(20);
+
+		if()
+		{
+			//step 1
+			rightArmJoints[0] = -42.00;
+			rightArmJoints[2] = -37.00;
+			rightArmJoints[3] = 29.00;
+			cv::waitKey(200);
+
+			//step 2
+			rightArmJoints[3] = 92.00;
+			cv::waitKey(200);
+
+			//step 3
+			rightArmJoints[3] = 22.00;
+			cv::waitKey(200);
+
+			//repeat step 2 and 3 for up to 3 seconds
+		}
+		
+
 	}
 
 	void Connector::initializePorts(char* readPortString, char* iCubInputPortString) {
@@ -149,10 +175,13 @@ Network yarpy;
 		vel->getAxes(&numRightArmJoints);
 		joints.resize(numRightArmJoints);
 		pos->setPositionMode();
+		
+		//this loop may not work as not all the joints will go to position 0 on the yarpmotorgui
 		for (int i = 0; i < rightArmJoints.size(); i++) 
 		{
 			joints[i] = 0;
 		}
+		
 		pos->positionMove(rightArmJoints.data());
 		vel->setVelocityMode();
 		printf("Right Arm Initialised \n");

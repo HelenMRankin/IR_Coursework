@@ -65,7 +65,7 @@ Mat ImageProcessor::applyColourThreshold(Mat image) {
 	Mat output;
 	Mat output_BGR;
 	cv::cvtColor(image, hsv, CV_BGR2HSV);
-	cv::inRange(hsv, Scalar(0, 180, 50), Scalar(180, 255, 255), output);
+	cv::inRange(hsv, Scalar(0, 160, 50), Scalar(180, 255, 255), output);
 	return output;
 }
 
@@ -160,17 +160,10 @@ bool ImageProcessor::detectFace(yarp::sig::Vector* location)
 {	
 	vector<Rect> faces;
 	String faceMarker_name = "C:\\Users\\Helen\\dev\\yarp_programs\\iCubCoursework\\IR_Coursework\\haarcascades\\haarcascade_frontalface_alt.xml";
-	String eyesMarker_name = "C:\\Users\\Helen\\dev\\yarp_programs\\iCubCoursework\\IR_Coursework\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml";
 	CascadeClassifier faceMarker;
-	CascadeClassifier eyesMarker;
 
 	//Load the .xml files
 	if(!faceMarker.load(faceMarker_name))
-	{
-		printf("Don't have file!\n");
-		throw "No source data!\n";
-	}
-	if (!eyesMarker.load(eyesMarker_name))
 	{
 		printf("Don't have file!\n");
 		throw "No source data!\n";

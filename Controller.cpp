@@ -23,11 +23,11 @@ public:
 	}
 
 	bool canSeeCircle(yarp::sig::Vector* location) {
-		return processor->detectCircle(location);
+		return processor->detectAllCircles(location);
 	}
 
-	bool canSeeSpecial() {
-		return false;
+	bool canSeeSpecial(yarp::sig::Vector* location) {
+		return processor->detectPurpleCircles(location);
 	}
 
 	State transitionFace(yarp::sig::Vector* location) {
@@ -42,8 +42,9 @@ public:
 		return CIRCLE;
 	}
 
-	State transitionSpecial() {
-		//TOOD
+	State transitionSpecial(yarp::sig::Vector* location) {
+		printf("State is SPECIAL\n");
+		connector->lookAt(location);
 		return SPECIAL;
 	}
 

@@ -15,8 +15,11 @@ BufferedPort < ImageOf<PixelRgb> > readPort;
 IVelocityControl *vel;
 IPositionControl *pos;
 int numJoints;
+int numRightArmJoints;
 yarp::sig::Vector joints;
+yarp::sig::Vector rightArmJoints;
 PolyDriver* robotHead;
+PolyDriver* rightArm;
 Network yarpy;
 
 	Connector::Connector(char* readPortStringIn, char* iCubInputPortStringIn) {
@@ -66,7 +69,34 @@ Network yarpy;
 	}
 
 	// TODO
-	void Connector::performGesture(enum gesture) {
+	void Connector::performGesture() 
+	{
+		for (int i = 0; i<numRightArmJoints; i++) 
+		{
+			joints[i] = 0;
+		}
+
+		cv::waitKey(20);
+
+		if()
+		{
+			//step 1
+			rightArmJoints[0] = -42.00;
+			rightArmJoints[2] = -37.00;
+			rightArmJoints[3] = 29.00;
+			cv::waitKey(200);
+
+			//step 2
+			rightArmJoints[3] = 92.00;
+			cv::waitKey(200);
+
+			//step 3
+			rightArmJoints[3] = 22.00;
+			cv::waitKey(200);
+
+			//repeat step 2 and 3 for up to 3 seconds
+		}
+		
 
 	}
 
@@ -115,4 +145,46 @@ Network yarpy;
 		vel->setVelocityMode();
 		printf("Reached setMode\n");
 		return true;
+	}
+
+	bool Connector::initialiseRightArm()
+	{
+		Property options;
+		options.put("device", "remote_controlboard");
+		options.put("local", "/tutorial/motor/client");
+		options.put("remote", "/icubSim/right_arm");
+
+		PolyDriver* armJoints = new PolyDriver(options);
+		rightArm = armJoints;
+
+		if (!rightArm->isValid()) 
+		{
+			printf("Cannot connect to right arm\n");
+			return false;
+		}
+
+		rightArm->view(pos);
+		rightArm->view(vel);
+
+		if (pos == NULL || vel == NULL) {
+			printf("Cannot get interface to right arm\n");
+			rightArm->close();
+			return false;
+		}
+
+		vel->getAxes(&numRightArmJoints);
+		joints.resize(numRightArmJoints);
+		pos->setPositionMode();
+		
+		//this loop may not work as not all the joints will go to position 0 on the yarpmotorgui
+		for (int i = 0; i < rightArmJoints.size(); i++) 
+		{
+			joints[i] = 0;
+		}
+		
+		pos->positionMove(rightArmJoints.data());
+		vel->setVelocityMode();
+		printf("Right Arm Initialised \n");
+		return true;
+
 	}
